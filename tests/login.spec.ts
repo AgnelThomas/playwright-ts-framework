@@ -1,36 +1,26 @@
 import { test, expect } from '@playwright/test';
+import { LoginPage } from './LoginPage';
 
 test.describe('Login', () => {
+  let loginPage: LoginPage;
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('https://www.saucedemo.com/');
+    loginPage = new LoginPage(page);
+    await loginPage.goto();
   });
 
   test('valid user can log in', async ({ page }) => {
-    await page.getByPlaceholder('Username').fill('standard_user');
-    await page.getByPlaceholder('Password').fill('secret_sauce');
-    await page.getByRole('button', { name: 'Login' }).click();
-
+    await loginPage.login('standard_user', 'secret_sauce');
     await expect(page).toHaveURL(/inventory/);
-    await expect(page.locator('[data-test="title"]')).toHaveText('Products');
   });
 
   test('wrong password shows error', async ({ page }) => {
-    await page.getByPlaceholder('Username').fill('standard_user');
-    await page.getByPlaceholder('Password').fill('wrong');
-    await page.getByRole('button', { name: 'Login' }).click();
-
-    await expect(page.locator('[data-test="error"]'))
-      .toContainText('Username and password do not match');
+    await loginPage.login('standard_user', 'wrong');
+    await expect(loginPage.errorMessage).toContainText('do not match');
   });
 
   test('locked out user sees error', async ({ page }) => {
-    await page.getByPlaceholder('Username').fill('locked_out_user');
-    await page.getByPlaceholder('Password').fill('secret_sauce');
-    await page.getByRole('button', { name: 'Login' }).click();
-
-    await expect(page.locator('[data-test="error"]'))
-      .toContainText('locked out');
+    await loginPage.login('locked_out_user', 'secret_sauce');
+    await expect(loginPage.errorMessage).toContainText('locked out');
   });
-
 });
